@@ -15,33 +15,23 @@ fn is_option(ty: &Type) -> bool {
 }
 
 fn unwrap_option(ty: &Type) -> Option<&Type> {
-    if let Type::Path(ref p) = ty {
-        return p.path.segments.first().and_then(|f| {
-            if f.ident != "Option" {
-                return None;
-            }
-
-            if let PathArguments::AngleBracketed(AngleBracketedGenericArguments {
-                ref args, ..
-            }) = f.arguments
-            {
-                let arg = if let Some(arg) = args.first() {
-                    arg
-                } else {
-                    return None;
-                };
-
-                if let GenericArgument::Type(ref t) = arg {
-                    Some(t)
-                } else {
-                    None
-                }
-            } else {
-                None
-            }
-        });
+    match ty {
+        Type::Path(ref p) => p
+            .path
+            .segments
+            .first()
+            .filter(|f| f.ident == "Option")
+            .and_then(|f| match f.arguments {
+                PathArguments::AngleBracketed(AngleBracketedGenericArguments {
+                    ref args, ..
+                }) => args.first().and_then(|arg| match arg {
+                    GenericArgument::Type(ref t) => Some(t),
+                    _ => None,
+                }),
+                _ => None,
+            }),
+        _ => None,
     }
-    None
 }
 
 #[proc_macro_derive(Builder, attributes(builder))]
